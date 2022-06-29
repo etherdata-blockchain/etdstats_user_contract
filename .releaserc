@@ -4,7 +4,7 @@
         '@semantic-release/release-notes-generator', 
         ["@semantic-release/github", {
             "assets": [
-              {"path": "artifacts/contracts/**/*.json", "label": "abi"},
+              ["artifacts/contracts/**/*.json", "!**/*.dbg.json"],
             ]
           }],
     ]
