@@ -4,11 +4,11 @@ async function main() {
   await run("compile");
 
   // We get the contract to deploy
-  const contract = await ethers.getContractFactory("CryptoPass");
-  console.log("Deploying CryptoPass...");
-  const file = await contract.deploy();
-  await file.deployed();
-  console.log("CryptoPass deployed to:", file.address);
+  const contract = await ethers.getContractFactory("User");
+  console.log("Deploying contract...");
+  const deployedContract = await contract.deploy();
+  await deployedContract.deployed();
+  console.log("Contract deployed to:", deployedContract.address);
 }
 
 (async () => {

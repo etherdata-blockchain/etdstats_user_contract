@@ -1,48 +1,56 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import crypto from "crypto";
 
-describe("CryptoPass", function () {
-  const encryptData = (data: any): [crypto.KeyObject, string] => {
-    const { publicKey, privateKey } = crypto.generateKeyPairSync("rsa", {
-      modulusLength: 2048,
-    });
-    const encrypted = crypto.publicEncrypt(
-      {
-        key: publicKey,
-        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-      },
-      Buffer.from(JSON.stringify(data))
-    );
-    return [privateKey, encrypted.toString("base64")];
+describe("User Contract", function () {
+  const mockUser = {
+    username: "test",
   };
 
-  it("Should add secret without problem", async function () {
-    const CryptoPass = await ethers.getContractFactory("CryptoPass");
-    const cryptoPass = await CryptoPass.deploy();
+  it("Should update secret without problem", async function () {
+    const signer = await ethers.getSigners();
+    const User = await ethers.getContractFactory("User");
+    const UserContract = await User.deploy();
 
-    expect(await cryptoPass.getSecretSize()).equal(0);
-    const data = {
-      password: "test",
-    };
-    const [privateKey, encrypted] = encryptData(data);
-    await cryptoPass.addSecret(encrypted);
-    expect(await cryptoPass.getSecretSize()).equal(1);
+    expect(await UserContract.getUserCount()).to.equal(0);
+    expect(await UserContract.getUser(signer[0].address)).to.equal("");
+    expect(await UserContract.getUserAddressesInRange(0, 10)).to.deep.equal([]);
 
-    const retrieved = await cryptoPass.getSecretInRange(0, 2);
-    expect(retrieved.length).equal(1);
-
-    const decrypted = JSON.parse(
-      crypto
-        .privateDecrypt(
-          {
-            key: privateKey,
-            padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-          },
-          Buffer.from(retrieved[0], "base64")
-        )
-        .toString()
+    await UserContract.updateUser(JSON.stringify(mockUser));
+    expect(await UserContract.getUserCount()).to.equal(1);
+    expect(await UserContract.getUser(signer[0].address)).to.equal(
+      JSON.stringify(mockUser)
     );
-    expect(decrypted).deep.equal(data);
+    expect(await UserContract.getUserAddressesInRange(0, 10)).to.deep.equal([
+      signer[0].address,
+    ]);
+  });
+
+  it("Should return correct info when multiple users", async function () {
+    const [account1, account2, account3, accounts] = await ethers.getSigners();
+    const User = await ethers.getContractFactory("User");
+    const UserContract = await User.deploy();
+
+    await UserContract.updateUser(JSON.stringify(mockUser));
+    await UserContract.connect(account2).updateUser(JSON.stringify(mockUser));
+    await UserContract.connect(account3).updateUser(JSON.stringify(mockUser));
+
+    expect(await UserContract.getUserCount()).to.equal(3);
+    expect(await UserContract.getUserAddressesInRange(0, 10)).to.deep.equal([
+      account1.address,
+      account2.address,
+      account3.address,
+    ]);
+
+    expect(await UserContract.getUser(account1.address)).to.equal(
+      JSON.stringify(mockUser)
+    );
+
+    expect(await UserContract.getUser(account2.address)).to.equal(
+      JSON.stringify(mockUser)
+    );
+
+    expect(await UserContract.getUser(account3.address)).to.equal(
+      JSON.stringify(mockUser)
+    );
   });
 });
