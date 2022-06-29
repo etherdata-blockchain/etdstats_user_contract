@@ -1,3 +1,3 @@
-# CryptoPass Smart Contract
+# User contract
 
-This repo contains the smart contract for CryptoPass, a decentralized password management software.
+This repo contains the source code for ETDStats user system
